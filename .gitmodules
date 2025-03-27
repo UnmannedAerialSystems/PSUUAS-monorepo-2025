@@ -1,0 +1,15 @@
+[submodule "ObjectDetection"]
+	path = ObjectDetection
+	url = git@github.com:tedtasman/ORB-Object-Detection.git
+[submodule "piTools"]
+	path = piTools
+	url = git@github.com:tedtasman/piTools.git
+[submodule "MavEZ"]
+	path = MavEZ
+	url = git@github.com:tedtasman/MAVez.git
+[submodule "GPSLocator"]
+	path = GPSLocator
+	url = git@github.com:tedtasman/GPSLocator.git
+[submodule "CameraTesting"]
+	path = CameraTesting
+	url = https://github.com/dec4234/CameraTesting.git
