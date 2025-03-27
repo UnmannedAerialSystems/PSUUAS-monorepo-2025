@@ -1,6 +1,6 @@
 eeprom.bin
 /logs
-mav.param
+mav.parm
 mav.tlog
 mav.tlog.raw
 perspectiveTest.ai
@@ -9,3 +9,5 @@ perspectiveTest.blend1
 /terrain
 way.txt
 /MAVLink
+.DS_Store
+test.py
