@@ -1,0 +1,12 @@
+takeoff:        takeoff.txt
+land:           land.txt
+detect:         detect.txt
+airdrop:        airdrop.txt
+geofence:       geofence.txt
+home:           0,0,0
+detect_index:   1
+airdrop_index:  1
+do_detect:      1
+current_target: 0
+targets:        None
+
