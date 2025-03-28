@@ -1,7 +1,10 @@
 '''
 UAS State Actions Module
+
 Ted Tasman
-Date: 2025-03-25
+2025-03-25
+PSU UAS
+
 This module implements the actions for the UAS state machine.
 '''
 
@@ -66,8 +69,6 @@ class Operation:
         
         # Initialize mission parameters
         self.mission_plan = None
-        self.current_target = None
-        self.targets = None
         self.detect_index = None
         self.airdrop_index = None
         self.home_coordinates = None
@@ -115,8 +116,6 @@ class Operation:
         self.home_coordinates = self.mission_plan['home']
         self.detect_index = self.mission_plan['detect_index']
         self.airdrop_index = self.mission_plan['airdrop_index']
-        self.current_target = self.mission_plan['current_target']
-        self.targets = self.mission_plan['targets']
 
         self.next_mission_state = PREFLIGHT
     

@@ -1,7 +1,10 @@
 '''
 UAS State Machine
-Author: Ted Tasman
-Date: 2025-03-25
+
+Ted Tasman
+2025-03-25
+PSU UAS
+
 This script implements a state machine for an Unmanned Aerial System (UAS) operation.
 '''
 

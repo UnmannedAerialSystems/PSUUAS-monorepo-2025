@@ -1,4 +1,4 @@
-from MavEZ import flight_manager, flight_utils
+from MavEZ import Mission, flight_manager
 from CameraTesting import camera_loop
 import time
 
