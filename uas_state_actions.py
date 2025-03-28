@@ -1,4 +1,11 @@
-from MavEZ import flight_manger, flight_utils
+'''
+UAS State Actions Module
+Ted Tasman
+Date: 2025-03-25
+This module implements the actions for the UAS state machine.
+'''
+
+from MavEZ import Mission, flight_manger
 from CameraModule import UAS_Camera
 from GPSLocator import targetMapper
 from ObjectDetection import lion_sight
@@ -42,6 +49,10 @@ PAYLOAD_RELEASED = 1
 AIRDROPS_INCOMPLETE = 0
 AIRDROPS_COMPLETE = 1
 
+
+
+# ============== Parameters =================
+MAX_DETECT_ATTEMPTS = 2
 
 
 class Operation:
@@ -116,10 +127,41 @@ class Operation:
         """
         
         if self.next_mission_state == TAKEOFF:
+            # append takeoff mission
+            self.flight.append_mission(self.takeoff_mission)
+            print("Takeoff mission appended.")
+            logging.info("Takeoff mission appended.")
+
 
         elif self.next_mission_state == DETECT:
-            if self.detection_state == DETECT_COMPLETE:
-                self.next_mission_state = AIRDROP
+            # append detection mission
+            self.flight.append_mission(self.detection_mission)
+            print("Detection mission appended.")
+            logging.info("Detection mission appended.")
+
+        elif self.next_mission_state == AIRDROP:
+            # append airdrop mission
+            self.flight.append_mission(self.airdrop_mission)
+            print("Airdrop mission appended.")
+            logging.info("Airdrop mission appended.")
+        
+        elif self.next_mission_state == LANDING:
+            # append landing mission
+            self.flight.append_mission(self.landing_mission)
+            print("Landing mission appended.")
+            logging.info("Landing mission appended.")
+        
+        elif self.next_mission_state == COMPLETE:
+            # append geofence mission
+            self.flight.append_mission(self.geofence_mission)
+            print("Geofence mission appended.")
+            logging.info("Geofence mission appended.")
+        else:
+            logging.critical("Invalid mission state.")
+            print("Invalid mission state.")
+            self.flight_state = ABORT
+            self.next_mission_state = LANDING
+
         
 
     def preflight_check(self):
@@ -131,15 +173,16 @@ class Operation:
             print("Preflight checks failed. Aborting...")
             logging.critical("Preflight checks failed.")
             self.flight_state = ABORT
+            self.next_mission_state = LANDING
             return
         
         else:
             print("Preflight checks passed.")
             logging.info("Preflight checks passed.")
 
-            flight_utils.Mission.load_mission(self.detection_mission)
-            flight_utils.Mission.load_mission(self.airdrop_mission)
-            flight_utils.Mission.load_mission(self.takeoff_mission)
+            Mission.Mission.load_mission(self.detection_mission) # this syntax is horrible python needs export default or something
+            Mission.Mission.load_mission(self.airdrop_mission)
+            Mission.Mission.load_mission(self.takeoff_mission)
             print("All missions validated.")
             logging.info("All missions validated.")
             
@@ -153,12 +196,13 @@ class Operation:
         """
         print("Waiting for takeoff confirmation...")
         logging.info("Waiting for takeoff confirmation...")
-        response = flight_utils.Mission.wait_for_channel_input(7, 100) # TODO: determine channel and value
+        response = Mission.Mission.wait_for_channel_input(7, 100) # TODO: determine channel and value
 
         if response:
             print("Takeoff confirmation failed.")
             logging.critical("Takeoff confirmation failed.")
             self.flight_state = ABORT
+            self.next_mission_state = LANDING
 
         else:
             print("Takeoff confirmation received.")
@@ -179,6 +223,7 @@ class Operation:
             print(self.flight.decode_error(response))
             logging.critical(f"Takeoff failed: {self.flight.decode_error(response)}")
             self.flight_state = ABORT
+            self.next_mission_state = LANDING
         else:
             print("Takeoff successful.")
             logging.info("Takeoff successful.")
@@ -201,12 +246,13 @@ class Operation:
         # wait to reach detection zone
         print("Waiting to reach detection zone...")
         logging.info("Waiting to reach detection zone...")
-        response = flight_utils.Mission.wait_for_waypoint_reached(self.detect_index, 100)
+        response = Mission.Mission.wait_for_waypoint_reached(self.detect_index, 100)
 
         if response:
             print(self.flight.decode_error(response))
             logging.critical(f"Detection zone not reached: {self.flight.decode_error(response)}")
             self.flight_state = ABORT
+            self.mission_state = LANDING
             return
         else:
             print("Detection zone reached.")
@@ -239,6 +285,7 @@ class Operation:
                 print("Max detection attempts reached. Aborting...")
                 logging.critical("Max detection attempts reached. Aborting...")
                 self.flight_state = ABORT
+                self.mission_state = LANDING
                 return
             
             # if not, retry detection
@@ -269,17 +316,19 @@ class Operation:
                 print("Max detection attempts reached. Aborting...")
                 logging.critical("Max detection attempts reached. Aborting...")
                 self.flight_state = ABORT
+                self.mission_state = LANDING
                 return
         
         # wait to reach airdrop zone
         print("Waiting to reach airdrop zone...")
         logging.info("Waiting to reach airdrop zone...")
-        response = flight_utils.Mission.wait_for_waypoint_reached(self.airdrop_index, 100)
+        response = Mission.Mission.wait_for_waypoint_reached(self.airdrop_index, 100)
 
         if response:
             print(self.flight.decode_error(response))
             logging.critical(f"Airdrop zone not reached: {self.flight.decode_error(response)}")
             self.flight_state = ABORT
+            self.mission_state = LANDING
             return
         else:
             print("Airdrop zone reached.")
@@ -313,70 +362,9 @@ class Operation:
     
 
 
-MAX_DETECT_ATTEMPTS = 2
 
-def main():
 
-    # Initialize operation
-    operation = Operation()
 
-    # Load mission plan
-    operation.load_plan('mission_plan.txt')
-
-    while operation.next_mission_state != COMPLETE:                                             # while mission is incomplete,
-
-        # ==== 0 - PREFLIGHT ====
-        if operation.next_mission_state == PREFLIGHT:                                               # if preflight check is required,
-            operation.preflight_check()                                                                 # perform preflight check,
-            if operation.flight_state == ABORT:                                                         # and if abort is required,
-                operation.next_mission_state = COMPLETE                                                     # set next mission state to complete and stop.
-            else:                                                                                       # or if preflight check is complete,
-                operation.next_mission_state = TAKEOFF_WAIT                                                 # set next mission state to takeoff wait and repeat.
-        # ==== 1 - TAKEOFF_WAIT ====
-        elif operation.next_mission_state == TAKEOFF_WAIT:                                          # or if waiting for takeoff confirmation,
-            operation.takeoff_wait()                                                                    # wait for takeoff confirmation,
-            if operation.flight_state == ABORT:                                                         # and if abort is required,
-                operation.next_mission_state = COMPLETE                                                     # set next mission state to complete and stop.
-            else:                                                                                       # or if takeoff confirmation is received,
-                operation.next_mission_state = TAKEOFF                                                     # set next mission state to takeoff and repeat.
-
-        # ==== 2 - TAKEOFF ====
-        elif operation.next_mission_state == TAKEOFF:                                               # or if takeoff is required,
-            if operation.detection_state == DETECT_INCOMPLETE:                                          # and if detection is incomplete,
-                operation.next_mission_state = DETECT                                                       # append detection mission and repeat.
-            else:                                                                                       # or if detection is complete, 
-                operation.next_mission_state = AIRDROP                                                      # append airdrop mission and repeat.
-
-        # ==== 3 - DETECT ====
-        elif operation.next_mission_state == DETECT:                                                # or if detection is required,
-            operation.detect()                                                                          # perform detection,
-            if operation.detection_state == DETECT_COMPLETE:                                            # and if detection is complete,
-                operation.next_mission_state = AIRDROP                                                      # append airdrop mission and repeat.
-            elif operation.detect_attempts >= operation.max_detect_attempts:                            # if detection max is reached,
-                    operation.flight_state = ABORT                                                          # abort,
-                    operation.next_mission_state = LANDING                                                  # and append landing mission and repeat.
-            else:                                                                                       # or if detection is incomplete,
-                operation.next_mission_state = DETECT                                                       # append detection mission and repeat.
-        
-        # ==== 4 - AIRDROP ====
-        elif operation.next_mission_state == AIRDROP:                                               # or if airdrop is required,
-            operation.airdrop()                                                                         # perform airdrop,
-            operation.next_mission_state = LANDING                                                      # and append landing mission and repeat.
-
-        # ==== 5 - LANDING ====    
-        elif operation.next_mission_state == LANDING:                                               # or if landing is required,
-            operation.land()                                                                            # perform landing,
-            if operation.completion_state == AIRDROPS_COMPLETE or operation.flight_state == ABORT:              # and if mission is complete or if abort is required
-                operation.next_mission_state = COMPLETE                                                             # set next mission state to complete and stop.
-            else:                                                                                               # or if mission is not complete,   
-                operation.next_mission_state = PREFLIGHT                                                            # set next mission state to preflight and repeat.
-        
-        # ==== STATE MACHINE ERROR ====
-        else:                                                                                       # otherwise, 
-            logging.error("State machine error, aborting")                                              # something is very probably very wrong.
-            print("CRITICAL: State machine error, aborting")                                                # I don't how you did that, it shouldn't be possible. We could probably reset it
-            operation.flight_state = ABORT                                                                  # but if it's a bug in the code, we should probably abort so it doesn't circle forever.
-            operation.next_mission_state = LANDING                                                          # land and repeat.
                                                                                                     
 
 
