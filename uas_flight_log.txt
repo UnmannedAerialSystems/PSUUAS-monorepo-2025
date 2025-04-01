@@ -1,0 +1,38 @@
+2025-04-01 17:07:42,063 - INFO - Mission plan loaded.
+2025-04-01 17:07:42,064 - INFO - Current mission state: Preflight Check
+2025-04-01 17:07:42,064 - INFO - Executing action for state: Preflight Check
+2025-04-01 17:07:42,415 - INFO - Preflight checks passed.
+2025-04-01 17:07:42,416 - INFO - All missions validated.
+2025-04-01 17:07:42,654 - INFO - Current mission state: Waiting for Takeoff
+2025-04-01 17:07:42,654 - INFO - Executing action for state: Waiting for Takeoff
+2025-04-01 17:07:42,654 - INFO - Waiting for takeoff confirmation...
+2025-04-01 17:07:45,955 - INFO - Takeoff confirmation received.
+2025-04-01 17:07:45,956 - INFO - Takeoff mission appended.
+2025-04-01 17:08:16,068 - INFO - Current mission state: Takeoff
+2025-04-01 17:08:16,068 - INFO - Executing action for state: Takeoff
+2025-04-01 17:08:16,068 - INFO - Taking off...
+2025-04-01 17:08:19,472 - INFO - Takeoff successful.
+2025-04-01 17:08:19,472 - INFO - Detection mission appended.
+2025-04-01 17:08:19,473 - INFO - Detection mission appended.
+2025-04-01 17:08:50,084 - INFO - Current mission state: Detection
+2025-04-01 17:08:50,086 - INFO - Executing action for state: Detection
+2025-04-01 17:08:50,086 - INFO - Waiting to reach detection zone...
+2025-04-01 17:12:51,565 - INFO - Mission plan loaded.
+2025-04-01 17:12:51,566 - INFO - Current mission state: Preflight Check
+2025-04-01 17:12:51,566 - INFO - Executing action for state: Preflight Check
+2025-04-01 17:12:51,921 - INFO - Preflight checks passed.
+2025-04-01 17:12:51,922 - INFO - All missions validated.
+2025-04-01 17:12:51,923 - INFO - Current mission state: Waiting for Takeoff
+2025-04-01 17:12:51,923 - INFO - Executing action for state: Waiting for Takeoff
+2025-04-01 17:12:51,923 - INFO - Waiting for takeoff confirmation...
+2025-04-01 17:12:57,538 - INFO - Takeoff confirmation received.
+2025-04-01 17:12:57,538 - INFO - Takeoff mission appended.
+2025-04-01 17:12:57,538 - INFO - Current mission state: Takeoff
+2025-04-01 17:12:57,538 - INFO - Executing action for state: Takeoff
+2025-04-01 17:12:57,539 - INFO - Taking off...
+2025-04-01 17:13:00,926 - INFO - Takeoff successful.
+2025-04-01 17:13:00,927 - INFO - Detection mission appended.
+2025-04-01 17:13:00,927 - INFO - Detection mission appended.
+2025-04-01 17:13:00,927 - INFO - Current mission state: Detection
+2025-04-01 17:13:00,927 - INFO - Executing action for state: Detection
+2025-04-01 17:13:00,927 - INFO - Waiting to reach detection zone...

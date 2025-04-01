@@ -1,10 +1,8 @@
-takeoff:        takeoff.txt
-land:           land.txt
-detect:         detect.txt
-airdrop:        airdrop.txt
-geofence:       geofence.txt
-home:           0,0,0
+takeoff:        ./testing/takeoff.txt
+land:           ./testing/land.txt
+detect:         ./testing/detect.txt
+airdrop:        ./testing/airdrop.txt
+geofence:       ./testing/geofence.txt
+home:           40.836055,-77.693492,0
 detect_index:   1
 airdrop_index:  1
-
-
