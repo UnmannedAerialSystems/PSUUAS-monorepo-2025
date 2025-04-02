@@ -109,7 +109,7 @@ def main():
             else:
                 action()
                 operation.append_next_mission()
-                operation.flight.wait_and_send_next_mission()
+                
 
         else:
             operation.next_mission_state = LANDING  # Fallback to landing state

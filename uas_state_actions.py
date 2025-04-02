@@ -124,6 +124,7 @@ class Operation:
         # convert home coordinates to Coordinate object
         lat, lon, alt = self.mission_plan['home'].split(',')
         self.mission_plan['home'] = Coordinate.Coordinate(float(lat), float(lon), float(alt))
+
         
         self.takeoff_mission = self.mission_plan['takeoff']
         self.landing_mission = self.mission_plan['land']
@@ -131,8 +132,8 @@ class Operation:
         self.detection_mission = self.mission_plan['detect']
         self.airdrop_mission = self.mission_plan['airdrop']
         self.home_coordinates = self.mission_plan['home']
-        self.detect_index = self.mission_plan['detect_index']
-        self.airdrop_index = self.mission_plan['airdrop_index']
+        self.detect_index = int(self.mission_plan['detect_index'])
+        self.airdrop_index = int(self.mission_plan['airdrop_index'])
 
         self.next_mission_state = PREFLIGHT
 
@@ -184,7 +185,6 @@ class Operation:
             self.next_mission_state = LANDING
 
         
-
     def preflight_check(self):
         """
         Perform preflight checks.
@@ -270,12 +270,8 @@ class Operation:
 
             # append detection mission or airdrop mission based on detection state
             if self.detection_state == DETECT_INCOMPLETE:
-                print("Detection mission appended.")
-                logging.info("Detection mission appended.")
                 self.next_mission_state = DETECT
             else:
-                print("Airdrop mission appended.")
-                logging.info("Airdrop mission appended.")
                 self.next_mission_state = AIRDROP
     
 
@@ -283,12 +279,18 @@ class Operation:
         """
         Perform detection
         """
+
+        # wait and send detection mission
+        print("Waiting to send detection mission...")
+        logging.info("Waiting to send detection mission...")
+        self.flight.wait_and_send_next_mission()
+
         # wait to reach detection zone
         print("Waiting to reach detection zone...")
         logging.info("Waiting to reach detection zone...")
 
         # wait_for_waypoint_reached blocks until the specified waypoint is reached or timeout
-        response = Mission.Mission.wait_for_waypoint_reached(self.detect_index, 100)
+        response = self.flight.wait_for_waypoint_reached(self.detect_index, 100)
 
         # check for response; if response is not 0, detection zone not reached
         if response:
@@ -320,6 +322,7 @@ class Operation:
             logging.info(f"Detected target: {targets}")
             self.targets = targets
             self.detection_state = DETECT_COMPLETE
+            self.next_mission_state = AIRDROP
 
         else: # for failed detection
 
@@ -351,6 +354,11 @@ class Operation:
         '''
         Perform airdrop
         '''
+        # wait and send airdrop mission
+        print("Waiting to send airdrop mission...")
+        logging.info("Waiting to send airdrop mission...")
+        self.flight.wait_and_send_next_mission()
+
         # targets must exist to perform airdrop
         if not self.targets:
             print("No targets detected. Cannot perform airdrop.")
@@ -374,7 +382,7 @@ class Operation:
         logging.info("Waiting to reach airdrop zone...")
 
         # wait_for_waypoint_reached blocks until the specified waypoint is reached or timeout
-        response = Mission.Mission.wait_for_waypoint_reached(self.airdrop_index, 100)
+        response = self.flight.wait_for_waypoint_reached(self.airdrop_index, 100)
 
         # check for response; if response is not 0, airdrop zone not reached
         if response:
