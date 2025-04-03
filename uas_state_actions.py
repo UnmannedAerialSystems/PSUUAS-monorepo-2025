@@ -7,26 +7,18 @@ PSU UAS
 
 This module implements the actions for the UAS state machine.
 '''
-import sys
-import os
-# Add MavEZ directory to the system path
-mavez_path = os.path.join(os.path.dirname(__file__), 'MavEZ')
-if mavez_path not in sys.path:
-    sys.path.append(mavez_path)
 
-from MavEZ import Mission, flight_manger, Coordinate
+from MavEZ.Coordinate import Coordinate
+from MavEZ.Mission import Mission
+from MavEZ.flight_manger import Flight
 from CameraModule import camera_emulator as UAS_Camera
 #from GPSLocator import targetMapper
 from ObjectDetection import lion_sight_emulator as lion_sight
-import logging
+from logging_config import configure_logging
+import time
 
 
-# Configure logging
-logging.basicConfig(
-    filename='uas_flight_log.txt',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+
 
 # MISSION STATES
 PREFLIGHT = 0
@@ -72,7 +64,7 @@ class Operation:
 
     def __init__(self):
         # Initialize components
-        self.flight = flight_manger.Flight()
+        self.flight = Flight()
         #self.camera = UAS_Camera.Camera()
         #self.mapper = targetMapper.TargetMapper()
         #self.detection = lion_sight.LionSight()
@@ -89,7 +81,6 @@ class Operation:
         self.airdrop_mission = None
 
         # Initialize states
-        self.mission_state = PREFLIGHT
         self.next_mission_state = None
         self.status = None
         self.flight_state = IDLE
@@ -103,6 +94,9 @@ class Operation:
         self.max_detect_attempts = MAX_DETECT_ATTEMPTS - 1
         self.targets = []
         self.current_target = 0
+
+        # Configure logging
+        self.logger = configure_logging()
 
 
 
@@ -123,7 +117,7 @@ class Operation:
         
         # convert home coordinates to Coordinate object
         lat, lon, alt = self.mission_plan['home'].split(',')
-        self.mission_plan['home'] = Coordinate.Coordinate(float(lat), float(lon), float(alt))
+        self.mission_plan['home'] = Coordinate(float(lat), float(lon), float(alt))
 
         
         self.takeoff_mission = self.mission_plan['takeoff']
@@ -137,50 +131,38 @@ class Operation:
 
         self.next_mission_state = PREFLIGHT
 
-        logging.info("Mission plan loaded.")
-        print("Mission plan loaded.")
+        self.logger.info("Mission plan loaded.")
     
 
     def append_next_mission(self):
         """
         Append the next mission to the flight plan.
         """
-        
-        if self.next_mission_state == TAKEOFF:
-            # append takeoff mission
-            self.flight.append_mission(self.takeoff_mission)
-            print("Takeoff mission appended.")
-            logging.info("Takeoff mission appended.")
 
-        elif self.next_mission_state == DETECT:
+        if self.next_mission_state == DETECT:
             # append detection mission
             self.flight.append_mission(self.detection_mission)
-            print("Detection mission appended.")
-            logging.info("Detection mission appended.")
+            self.logger.info("Detection mission appended.")
 
         elif self.next_mission_state == AIRDROP:
             # append airdrop mission
             self.flight.append_mission(self.airdrop_mission)
-            print("Airdrop mission appended.")
-            logging.info("Airdrop mission appended.")
+            self.logger.info("Airdrop mission appended.")
         
         elif self.next_mission_state == LANDING:
             # append landing mission
             self.flight.append_mission(self.landing_mission)
-            print("Landing mission appended.")
-            logging.info("Landing mission appended.")
+            self.logger.info("Landing mission appended.")
         
         elif self.next_mission_state == COMPLETE:
             # log completion
-            logging.info("Objective complete.")
-            print("Objective complete.")
+            self.logger.info("Objective complete.")
 
         # takeoff wait and preflight are not missions, so do not append
         # if next mission state is not one of the above, preflight, or takeoff wait, it's invalid
-        elif self.next_mission_state != PREFLIGHT and self.next_mission_state != TAKEOFF_WAIT:
+        elif self.next_mission_state != PREFLIGHT and self.next_mission_state != TAKEOFF_WAIT and self.next_mission_state != TAKEOFF:
             # abort if invalid mission state
-            logging.critical(f"Invalid mission state: {self.next_mission_state}")
-            print(f"Invalid mission state: {self.next_mission_state}")
+            self.logger.critical(f"Invalid mission state: {self.next_mission_state}")
             self.status = ABORT
             self.next_mission_state = LANDING
 
@@ -189,61 +171,56 @@ class Operation:
         """
         Perform preflight checks.
         """
-        # pass preflight check to flight manager
-        response = self.flight.preflight_check(self.landing_mission, self.geofence_mission, self.home_coordinates)
-        if response: # any response means preflight check failed
-            print("Preflight checks failed. Aborting...")
-            logging.critical(f"Preflight checks failed. {response}")
-            self.status = ABORT # set status to abort to end objective
-            return
-        
-        else: # if no response, preflight check passed
-            print("Preflight checks passed.")
-            logging.info("Preflight checks passed.")
-
-            # validate missions; response is 0 if successful
-            detect_response = Mission.Mission.validate_mission_file(self.detection_mission) # this syntax is horrible python needs export default or something
-            airdrop_response = Mission.Mission.validate_mission_file(self.airdrop_mission)
-            takeoff_response = Mission.Mission.validate_mission_file(self.takeoff_mission)
-
-            # if any mission fails to load, abort
-            if detect_response or airdrop_response or takeoff_response:
-                print("Mission validation failed.")
-                logging.critical(f"Mission validation failed: Detect- {detect_response}, Airdrop- {airdrop_response}, Takeoff- {takeoff_response}")
-                self.status = ABORT
+        # only run preflight check on first run
+        if self.preflight_state == PREFLIGHT_INCOMPLETE:
+            # pass preflight check to flight manager
+            response = self.flight.preflight_check(self.landing_mission, self.geofence_mission, self.home_coordinates)
+            if response: # any response means preflight check failed
+                self.logger.critical(f"Preflight checks failed. {response}")
+                self.status = ABORT # set status to abort to end objective
                 return
             
-            print("All missions validated.")
-            logging.info("All missions validated.")
-            
-            # if everything is ok:
-            self.preflight_state = PREFLIGHT_COMPLETE
-            self.next_mission_state = TAKEOFF_WAIT
-            self.status = OK
+            else: # if no response, preflight check passed
+                self.logger.info("Preflight checks passed.")
+
+                # validate missions; response is 0 if successful
+                detect_response = Mission.validate_mission_file(self.detection_mission) # this syntax is horrible python needs export default or something
+                airdrop_response = Mission.validate_mission_file(self.airdrop_mission)
+                takeoff_response = Mission.validate_mission_file(self.takeoff_mission)
+
+                # if any mission fails to load, abort
+                if detect_response or airdrop_response or takeoff_response:
+                    self.logger.critical(f"Mission validation failed: Detect- {detect_response}, Airdrop- {airdrop_response}, Takeoff- {takeoff_response}")
+                    self.status = ABORT
+                    return
+                
+                self.logger.info("All missions validated.")
+                
+        # if everything is ok:
+        self.preflight_state = PREFLIGHT_COMPLETE
+        self.next_mission_state = TAKEOFF_WAIT
+        self.status = OK
 
 
     def takeoff_wait(self):
         """
         Wait for takeoff confirmation.
         """
-        # wait for takeoff confirmation from remote control
-        print("Waiting for takeoff confirmation...")
-        logging.info("Waiting for takeoff confirmation...")
+
+        self.logger.info("Waiting for takeoff confirmation...")
 
         # wait_for_channel_input blocks until the channel input is received or timeout
-        #response = Mission.Mission.wait_for_channel_input(7, 100) # TODO: determine channel and value
+        #response = Mission.wait_for_channel_input(7, 100) # TODO: determine channel and value
         response = input("Press Enter to confirm takeoff...") # TODO: replace with channel input
         
         # if response is not 0, takeoff confirmation failed (timeout)
         if response:
-            print("Takeoff confirmation failed.")
-            logging.critical("Takeoff confirmation failed.")
+            self.logger.critical("Takeoff confirmation failed.")
             self.status = ABORT
             self.next_mission_state = COMPLETE # still on ground, so mission is complete
 
         else: 
-            print("Takeoff confirmation received.")
-            logging.info("Takeoff confirmation received.")
+            self.logger.info("Takeoff confirmation received.")
             self.next_mission_state = TAKEOFF
 
     
@@ -252,21 +229,18 @@ class Operation:
         """
         Perform takeoff.
         """
-        print("Taking off...")
-        logging.info("Taking off...")
+        self.logger.info("Taking off...")
         response = self.flight.takeoff(self.takeoff_mission)
         self.flight_state = FLYING # assume flying after takeoff, even if takeoff fails
 
         # check for response; if response is not 0, takeoff failed
         if response:
-            print(self.flight.decode_error(response))
-            logging.critical(f"Takeoff failed: {self.flight.decode_error(response)}")
+            self.logger.critical(f"Takeoff failed: {self.flight.decode_error(response)}")
             self.status = ABORT
             self.next_mission_state = LANDING # must land since we are in the air
 
         else:
-            print("Takeoff successful.")
-            logging.info("Takeoff successful.")
+            self.logger.info("Takeoff successful.")
 
             # append detection mission or airdrop mission based on detection state
             if self.detection_state == DETECT_INCOMPLETE:
@@ -281,35 +255,27 @@ class Operation:
         """
 
         # wait and send detection mission
-        print("Waiting to send detection mission...")
-        logging.info("Waiting to send detection mission...")
+        self.logger.info("Waiting to send detection mission...")
         self.flight.wait_and_send_next_mission()
 
         # wait to reach detection zone
-        print("Waiting to reach detection zone...")
-        logging.info("Waiting to reach detection zone...")
+        self.logger.info("Waiting to reach detection zone...")
 
         # wait_for_waypoint_reached blocks until the specified waypoint is reached or timeout
         response = self.flight.wait_for_waypoint_reached(self.detect_index, 100)
 
         # check for response; if response is not 0, detection zone not reached
         if response:
-            print(self.flight.decode_error(response))
-            logging.critical(f"Detection zone not reached: {self.flight.decode_error(response)}")
+            self.logger.critical(f"Detection zone not reached: {self.flight.decode_error(response)}")
             self.status = ABORT
             self.next_mission_state = LANDING
             return
         
-        # if no response, detection zone reached
-        else:
-            print("Detection zone reached.")
-            logging.info("Detection zone reached.")
-        
-        print("Starting detection...")
-        logging.info("Starting detection...")
+        self.logger.info("Starting detection...")
 
         # take photos
         #self.camera.start()
+        time.sleep(3)
 
         # returns detection results if successful
         #targets = self.detection.detect()
@@ -318,16 +284,14 @@ class Operation:
         # check for detection results
         if targets: # for successful detection
 
-            print(f"Detected target: {targets}")
-            logging.info(f"Detected target: {targets}")
+            self.logger.info(f"Detected target: {targets}")
             self.targets = targets
             self.detection_state = DETECT_COMPLETE
             self.next_mission_state = AIRDROP
 
         else: # for failed detection
 
-            print("No targets detected.")
-            logging.warning("No targets detected.")
+            self.logger.warning("No targets detected.")
 
             # increment detection attempts to prevent infinite loop
             self.detect_attempts += 1
@@ -335,16 +299,14 @@ class Operation:
             
             # if max attempts reached, abort
             if self.detect_attempts >= self.max_detect_attempts:
-                print("Max detection attempts reached. Aborting...")
-                logging.critical("Max detection attempts reached. Aborting...")
+                self.logger.critical("Max detection attempts reached. Aborting...")
                 self.status = ABORT
                 self.mission_state = LANDING
                 return
             
             # if not, retry detection (go around again)
             else:
-                print("Retrying detection...")
-                logging.info("Retrying detection...")
+                self.logger.info("Retrying detection...")
                 self.detection_state = DETECT_INCOMPLETE # fall back to incomplete for proper retry
                 self.next_mission_state = DETECT
                 return
@@ -355,51 +317,44 @@ class Operation:
         Perform airdrop
         '''
         # wait and send airdrop mission
-        print("Waiting to send airdrop mission...")
-        logging.info("Waiting to send airdrop mission...")
+        self.logger.info("Waiting to send airdrop mission...")
         self.flight.wait_and_send_next_mission()
 
         # targets must exist to perform airdrop
         if not self.targets:
-            print("No targets detected. Cannot perform airdrop.")
-            logging.error("No targets detected. Cannot perform airdrop.")
+            self.logger.error("No targets detected. Cannot perform airdrop.")
             
             # we can run detection if we have not reached max attempts
             if self.detect_attempts < self.max_detect_attempts:
-                print("Attempting to detect again...")
-                logging.info("Attempting to detect again...")
+                self.logger.info("Attempting to detect again...")
                 self.next_mission_state = DETECT
                 return
             else:
-                print("Max detection attempts reached. Aborting...")
-                logging.critical("Max detection attempts reached. Aborting...")
+                self.logger.critical("Max detection attempts reached. Aborting...")
                 self.status = ABORT
                 self.mission_state = LANDING
                 return
         
         # wait to reach airdrop zone
-        print("Waiting to reach airdrop zone...")
-        logging.info("Waiting to reach airdrop zone...")
+        self.logger.info("Waiting to reach airdrop zone...")
 
         # wait_for_waypoint_reached blocks until the specified waypoint is reached or timeout
         response = self.flight.wait_for_waypoint_reached(self.airdrop_index, 100)
 
         # check for response; if response is not 0, airdrop zone not reached
         if response:
-            print(self.flight.decode_error(response))
-            logging.critical(f"Airdrop zone not reached: {self.flight.decode_error(response)}")
+            self.logger.critical(f"Airdrop zone not reached: {self.flight.decode_error(response)}")
             self.status = ABORT
             self.mission_state = LANDING
             return
         
         else:
-            print("Airdrop zone reached.")
-            logging.info("Airdrop zone reached.")
         
             # perform airdrop
-            self.flight.controller.set_servo(self.airdrop_mission, 1, 2000) # TODO: determine servo index and value
-            print("Airdrop successful.")
-            logging.info("Airdrop successful.")
+            #self.flight.controller.set_servo(self.airdrop_mission, 1, 2000) # TODO: determine servo index and value
+            self.logger.info("Triggering airdrop servo...") # TODO: replace with actual servo trigger
+            time.sleep(0.5)
+            self.logger.info("Airdrop successful.")
             
             self.current_target += 1
             self.payload_state = PAYLOAD_RELEASED
@@ -407,16 +362,39 @@ class Operation:
             # check if all targets have been airdropped
             if self.current_target >= len(self.targets):
                 # if so, mission is complete
-                print("All targets airdropped. Mission complete.")
-                logging.info("All targets airdropped. Mission complete.")
+                self.logger.info("All targets airdropped. Mission complete.")
                 self.completion_state = AIRDROPS_COMPLETE 
-                self.mission_state = LANDING
+            
+            # land no matter what after airdrop
+            self.next_mission_state = LANDING
     
 
     def land(self):
         """
         Perform landing.
         """
+        # wait and send landing mission
+        self.logger.info("Waiting to send landing mission...")
+        self.flight.wait_and_send_next_mission()
+
+        # wait to be landed
+        self.logger.info("Waiting for land confirmation...")
+        # wait_for_landed blocks until the vehicle is landed or timeout
+        response = self.flight.wait_for_landed(200)
+
+        # check for response; if response is not 0, landing failed
+        if response:
+            self.logger.critical(f"Landing failed: {self.flight.decode_error(response)}")
+            self.status = ABORT
+            self.next_mission_state = COMPLETE # set to complete so it doesn't keep trying to land
+            return
+        
+        else:
+            self.logger.info("Landing successful.")
+            self.flight_state = IDLE
+            self.next_mission_state = PREFLIGHT
+
+        
 
 
 def main():
