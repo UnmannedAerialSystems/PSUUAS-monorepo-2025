@@ -49,8 +49,6 @@ AIRDROPS_INCOMPLETE = uas_state_actions.AIRDROPS_INCOMPLETE
 AIRDROPS_COMPLETE = uas_state_actions.AIRDROPS_COMPLETE
 
 
-
-
 def translate_mission_state(state):
     """
     Translate the mission state to a human-readable string.
