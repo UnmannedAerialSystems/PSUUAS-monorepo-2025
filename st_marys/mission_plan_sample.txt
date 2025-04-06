@@ -1,0 +1,8 @@
+takeoff:        ./st_marys/takeoff.txt
+land:           ./st_marys/land.txt
+detect:         ./st_marys/detect.txt
+airdrop:        ./st_marys/airdrop.txt
+geofence:       ./st_marys/geofence.txt
+home:           0,0,0
+detect_index:   1
+airdrop_index:  1

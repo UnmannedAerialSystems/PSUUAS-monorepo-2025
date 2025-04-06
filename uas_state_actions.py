@@ -28,6 +28,7 @@ DETECT = 3
 AIRDROP = 4
 LANDING = 5
 COMPLETE = 6
+# TODO: add go around/circle state so waypoints don't need to be duplicated in mission file
 
 # FLIGHT STATES
 IDLE = 0
@@ -210,8 +211,8 @@ class Operation:
         self.logger.info("Waiting for takeoff confirmation...")
 
         # wait_for_channel_input blocks until the channel input is received or timeout
-        #response = Mission.wait_for_channel_input(7, 100) # TODO: determine channel and value
-        response = input("Press Enter to confirm takeoff...") # TODO: replace with channel input
+        response = Mission.wait_for_channel_input(6, 982, timeout=10, wait_time=120, value_tolerance=100) # TODO: determine channel and value
+        #response = input("Press Enter to confirm takeoff...") # TODO: replace with channel input
         
         # if response is not 0, takeoff confirmation failed (timeout)
         if response:
@@ -221,7 +222,7 @@ class Operation:
 
         else: 
             self.logger.info("Takeoff confirmation received.")
-            self.next_mission_state = TAKEOFF
+            self.next_mission_state = DETECT
 
     
 
@@ -353,7 +354,9 @@ class Operation:
             # perform airdrop
             #self.flight.controller.set_servo(self.airdrop_mission, 1, 2000) # TODO: determine servo index and value
             self.logger.info("Triggering airdrop servo...") # TODO: replace with actual servo trigger
-            time.sleep(0.5)
+            self.flight.controller.set_servo(10, 800) # TODO: determine servo index and value
+            time.sleep(2)
+            self.flight.controller.set_servo(10, 2100) # TODO: determine servo index and value
             self.logger.info("Airdrop successful.")
             
             self.current_target += 1
@@ -389,10 +392,17 @@ class Operation:
             self.next_mission_state = COMPLETE # set to complete so it doesn't keep trying to land
             return
         
-        else:
-            self.logger.info("Landing successful.")
-            self.flight_state = IDLE
-            self.next_mission_state = PREFLIGHT
+        
+        self.logger.info("Landing successful.")
+
+        # jump ahead to complete mission   
+        self.logger.info("Jumping to next mission item...")
+        self.flight.jump_to_next_mission_item()
+
+        self.flight_state = IDLE
+        self.next_mission_state = PREFLIGHT
+        
+
 
         
 
