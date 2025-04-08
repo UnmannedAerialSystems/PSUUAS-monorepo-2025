@@ -1,0 +1,31 @@
+name: Package Repository
+
+on:
+  push:
+    branches:
+      - main 
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo with submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Strip .git folders
+      run: |
+        find . -name ".git" -type d -exec rm -rf {} +
+
+    - name: Create tar.gz
+      run: |
+        cd ..
+        tar czf repo-package.tar.gz PSU-UAS-Control
+
+    - name: Upload tarball artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: uas-package
+        path: ../uas-package.tar.gz
