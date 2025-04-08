@@ -28,4 +28,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: uas-package
-        path: ../uas-package.tar.gz
+        path: dist/uas-package.tar.gz
