@@ -22,13 +22,14 @@ jobs:
       run: |
         find . -name ".git" -type d -exec rm -rf {} +
 
-    - name: Create tar.gz
+    - name: Create tar.gz safely outside workspace
       run: |
-        mkdir -p dist
-        tar -czf dist/uas-package.tar.gz .
-        echo "✅ Tarball created:"
+        mkdir -p dist-temp
+        tar -czf dist-temp/uas-package.tar.gz .
+        mv dist-temp/uas-package.tar.gz dist/
+        echo "✅ Tarball ready:"
         ls -la dist/
-
+    
     - name: Upload tarball artifact
       uses: actions/upload-artifact@v4
       with:
