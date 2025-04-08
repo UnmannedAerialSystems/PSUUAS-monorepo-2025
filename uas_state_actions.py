@@ -65,7 +65,7 @@ class Operation:
 
     def __init__(self):
         # Initialize components
-        self.flight = Flight()
+        self.flight = Flight(connection_string='/dev/ttyACM0')
         #self.camera = UAS_Camera.Camera()
         #self.mapper = targetMapper.TargetMapper()
         #self.detection = lion_sight.LionSight()
@@ -80,6 +80,12 @@ class Operation:
         self.geofence_mission = None
         self.detection_mission = None
         self.airdrop_mission = None
+        self.airdrop_servo = None
+        self.airdrop_value_open = None
+        self.airdrop_value_close = None
+        self.trigger_channel = None
+        self.trigger_value = None
+        self.trigger_wait_time = None
 
         # Initialize states
         self.next_mission_state = None
@@ -129,6 +135,12 @@ class Operation:
         self.home_coordinates = self.mission_plan['home']
         self.detect_index = int(self.mission_plan['detect_index'])
         self.airdrop_index = int(self.mission_plan['airdrop_index'])
+        self.airdrop_servo = int(self.mission_plan['airdrop_servo'])
+        self.airdrop_value_open = int(self.mission_plan['airdrop_value_open'])
+        self.airdrop_value_close = int(self.mission_plan['airdrop_value_close'])
+        self.trigger_channel = int(self.mission_plan['trigger_channel'])
+        self.trigger_value = int(self.mission_plan['trigger_value'])
+        self.trigger_wait_time = int(self.mission_plan['trigger_wait_time'])
 
         self.next_mission_state = PREFLIGHT
 
@@ -211,8 +223,7 @@ class Operation:
         self.logger.info("Waiting for takeoff confirmation...")
 
         # wait_for_channel_input blocks until the channel input is received or timeout
-        response = Mission.wait_for_channel_input(6, 982, timeout=10, wait_time=120, value_tolerance=100) # TODO: determine channel and value
-        #response = input("Press Enter to confirm takeoff...") # TODO: replace with channel input
+        response = Mission.wait_for_channel_input(self.trigger_channel, self.trigger_value, wait_time=self.trigger_wait_time, value_tolerance=100) # TODO: determine channel and value
         
         # if response is not 0, takeoff confirmation failed (timeout)
         if response:
@@ -222,7 +233,8 @@ class Operation:
 
         else: 
             self.logger.info("Takeoff confirmation received.")
-            self.next_mission_state = DETECT
+            self.next_mission_state = DETECT # TODO: set to detect for now, but should be takeoff
+            self.flight.controller.set_mode('AUTO') # TODO: only set to auto if going straight to detect
 
     
 
@@ -280,7 +292,7 @@ class Operation:
 
         # returns detection results if successful
         #targets = self.detection.detect()
-        targets = [1, 2, 3] # TODO: replace with actual detection results
+        targets = [1, 2, 3, 4] # TODO: replace with actual detection results
 
         # check for detection results
         if targets: # for successful detection
@@ -352,11 +364,10 @@ class Operation:
         else:
         
             # perform airdrop
-            #self.flight.controller.set_servo(self.airdrop_mission, 1, 2000) # TODO: determine servo index and value
-            self.logger.info("Triggering airdrop servo...") # TODO: replace with actual servo trigger
-            self.flight.controller.set_servo(10, 800) # TODO: determine servo index and value
+            self.logger.info("Triggering airdrop servo...")
+            self.flight.controller.set_servo(self.airdrop_servo, self.airdrop_value_open) 
             time.sleep(2)
-            self.flight.controller.set_servo(10, 2100) # TODO: determine servo index and value
+            self.flight.controller.set_servo(self.airdrop_servo, self.airdrop_value_close)
             self.logger.info("Airdrop successful.")
             
             self.current_target += 1
