@@ -4,12 +4,12 @@
 [submodule "piTools"]
 	path = piTools
 	url = git@github.com:tedtasman/piTools.git
-[submodule "MAVez"]
-	path = MAVez
-	url = git@github.com:tedtasman/MAVez.git
 [submodule "GPSLocator"]
 	path = GPSLocator
 	url = https://github.com/UnmannedAerialSystems/GPSLocator.git
 [submodule "CameraTesting"]
 	path = CameraTesting
 	url = https://github.com/dec4234/CameraTesting.git
+[submodule "MAVez"]
+	path = MAVez
+	url = git@github.com:tedtasman/MAVez.git
