@@ -8,9 +8,9 @@ PSU UAS
 This module implements the actions for the UAS state machine.
 '''
 
-from MavEZ.Coordinate import Coordinate
-from MavEZ.Mission import Mission
-from MavEZ.flight_manger import Flight
+from MAVez.Coordinate import Coordinate
+from MAVez.Mission import Mission
+from MAVez.flight_manger import Flight
 from CameraModule import camera_emulator as UAS_Camera
 #from GPSLocator import targetMapper
 from ObjectDetection import lion_sight_emulator as lion_sight

@@ -4,8 +4,8 @@
 [submodule "piTools"]
 	path = piTools
 	url = git@github.com:tedtasman/piTools.git
-[submodule "MavEZ"]
-	path = MavEZ
+[submodule "MAVez"]
+	path = MAVez
 	url = git@github.com:tedtasman/MAVez.git
 [submodule "GPSLocator"]
 	path = GPSLocator
