@@ -15,14 +15,19 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Strip .git folders
+    - name: List workspace contents (debug)
+      run: ls -la
+
+    - name: Strip .git folders (optional)
       run: |
         find . -name ".git" -type d -exec rm -rf {} +
 
     - name: Create tar.gz
       run: |
-        cd ..
-        tar czf uas-package.tar.gz PSU-UAS-Control
+        mkdir -p dist
+        tar -czf dist/uas-package.tar.gz .
+        echo "✅ Tarball created:"
+        ls -la dist/
 
     - name: Upload tarball artifact
       uses: actions/upload-artifact@v4
