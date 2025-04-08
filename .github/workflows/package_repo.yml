@@ -24,10 +24,11 @@ jobs:
 
     - name: Create tar.gz safely outside workspace
       run: |
-        mkdir -p dist-temp
+        mkdir -p dist  # Make sure dist/ exists
+        mkdir -p dist-temp  # Temporary directory for the tarball
         tar -czf dist-temp/uas-package.tar.gz .
         mv dist-temp/uas-package.tar.gz dist/
-        echo "✅ Tarball ready:"
+        echo "✅ Tarball created:"
         ls -la dist/
     
     - name: Upload tarball artifact
