@@ -64,6 +64,6 @@ jobs:
       with:
         tag_name: ${{ steps.get_version.outputs.next_version }}
         name: Release ${{ steps.get_version.outputs.next_version }}
-        files: dist/uas-package.zar.gz
+        files: dist/uas-package.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
