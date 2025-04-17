@@ -26,6 +26,10 @@ jobs:
       run: |
         find . \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.gif" -o -name "*.bmp" -o -name "*.svg" \) -type f -exec rm -f {} +
 
+    - name: Remove start_uas.sh
+      run: |
+        find . -name "start_uas.sh" -type f -exec rm -f {} +
+    
     - name: Create tar.gz safely outside workspace
       run: |
         mkdir -p dist  # Make sure dist/ exists
