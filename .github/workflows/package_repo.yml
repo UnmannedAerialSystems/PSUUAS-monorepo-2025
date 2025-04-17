@@ -18,6 +18,20 @@ jobs:
     - name: List workspace contents (debug)
       run: ls -la
 
+    - name: Get latest release version
+      id: get_version
+      run: |
+        # Get the latest tag that looks like v1, v2, etc.
+        latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' | sed 's/v//')
+        if [[ -z "$latest" ]]; then
+          next=1
+        else
+          next=$((latest + 1))
+        fi
+        echo "next_version=v$next" >> $GITHUB_OUTPUT
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
     - name: Strip any .git files or directories
       run: |
         find . -name ".git*" -exec rm -rf {} +
@@ -44,26 +58,12 @@ jobs:
       with:
         name: uas-package
         path: dist/uas-package.tar.gz
-
-    - name: Get latest release version
-      id: get_version
-      run: |
-        # Get the latest tag that looks like v1, v2, etc.
-        latest=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' | sed 's/v//')
-        if [[ -z "$latest" ]]; then
-          next=1
-        else
-          next=$((latest + 1))
-        fi
-        echo "next_version=v$next" >> $GITHUB_OUTPUT
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.get_version.outputs.next_version }}
         name: Release ${{ steps.get_version.outputs.next_version }}
-        files: dist/my-package.zip
+        files: dist/uas-package.zar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
