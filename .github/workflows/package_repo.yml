@@ -18,9 +18,13 @@ jobs:
     - name: List workspace contents (debug)
       run: ls -la
 
-    - name: Strip .git folders (optional)
+    - name: Strip any .git files or directories
       run: |
-        find . -name ".git" -type d -exec rm -rf {} +
+        find . -name ".git*" -exec rm -rf {} +
+
+    - name: Remove any images
+      run: |
+        find . \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.gif" -o -name "*.bmp" -o -name "*.svg" \) -type f -exec rm -f {} +
 
     - name: Create tar.gz safely outside workspace
       run: |
