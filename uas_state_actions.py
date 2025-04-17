@@ -11,7 +11,7 @@ This module implements the actions for the UAS state machine.
 from MAVez.Coordinate import Coordinate
 from MAVez.Mission import Mission
 from MAVez.flight_manger import Flight
-from CameraModule import camera_emulator as UAS_Camera
+#from CameraModule import camera_emulator as UAS_Camera
 #from GPSLocator import targetMapper
 from ObjectDetection import lion_sight_emulator as lion_sight
 from logging_config import configure_logging
@@ -65,7 +65,7 @@ class Operation:
 
     def __init__(self):
         # Initialize components
-        self.flight = Flight(connection_string='/dev/ttyACM0')
+        self.flight = Flight()
         #self.camera = UAS_Camera.Camera()
         #self.mapper = targetMapper.TargetMapper()
         #self.detection = lion_sight.LionSight()
@@ -154,8 +154,9 @@ class Operation:
 
         if self.next_mission_state == DETECT:
             # append detection mission
-            self.flight.append_mission(self.detection_mission)
-            self.logger.info("Detection mission appended.")
+            #self.flight.append_mission(self.detection_mission)
+            #self.logger.info("Detection mission appended.")
+            pass
 
         elif self.next_mission_state == AIRDROP:
             # append airdrop mission
@@ -197,7 +198,7 @@ class Operation:
                 self.logger.info("Preflight checks passed.")
 
                 # validate missions; response is 0 if successful
-                detect_response = Mission.validate_mission_file(self.detection_mission) # this syntax is horrible python needs export default or something
+                detect_response = Mission.validate_mission_file(self.detection_mission)
                 airdrop_response = Mission.validate_mission_file(self.airdrop_mission)
                 takeoff_response = Mission.validate_mission_file(self.takeoff_mission)
 
@@ -223,8 +224,9 @@ class Operation:
         self.logger.info("Waiting for takeoff confirmation...")
 
         # wait_for_channel_input blocks until the channel input is received or timeout
-        response = Mission.wait_for_channel_input(self.trigger_channel, self.trigger_value, wait_time=self.trigger_wait_time, value_tolerance=100) # TODO: determine channel and value
-        
+        #response = self.flight.wait_for_channel_input(self.trigger_channel, self.trigger_value, wait_time=self.trigger_wait_time, value_tolerance=100) # TODO: determine channel and value
+        input("Press enter to simulate takeoff confirmation...") # TODO: remove this line and uncomment the line above
+        response = 0
         # if response is not 0, takeoff confirmation failed (timeout)
         if response:
             self.logger.critical("Takeoff confirmation failed.")
@@ -234,7 +236,6 @@ class Operation:
         else: 
             self.logger.info("Takeoff confirmation received.")
             self.next_mission_state = DETECT # TODO: set to detect for now, but should be takeoff
-            self.flight.controller.set_mode('AUTO') # TODO: only set to auto if going straight to detect
 
     
 
@@ -266,10 +267,11 @@ class Operation:
         """
         Perform detection
         """
-
         # wait and send detection mission
-        self.logger.info("Waiting to send detection mission...")
-        self.flight.wait_and_send_next_mission()
+        self.logger.info("Sending detection mission...")
+        self.flight.detect_mission.load_mission_from_file(self.detection_mission)
+        self.flight.detect_mission.send_mission()
+
 
         # wait to reach detection zone
         self.logger.info("Waiting to reach detection zone...")

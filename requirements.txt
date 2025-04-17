@@ -1,2 +1,4 @@
 colorlog
 pymavlink
+pyserial
+matplotlib
