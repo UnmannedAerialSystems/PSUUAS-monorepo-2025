@@ -224,8 +224,8 @@ class Operation:
         self.logger.info("Waiting for takeoff confirmation...")
 
         # wait_for_channel_input blocks until the channel input is received or timeout
-        #response = self.flight.wait_for_channel_input(self.trigger_channel, self.trigger_value, wait_time=self.trigger_wait_time, value_tolerance=100) # TODO: determine channel and value
-        input("Press enter to simulate takeoff confirmation...") # TODO: remove this line and uncomment the line above
+        response = self.flight.wait_for_channel_input(self.trigger_channel, self.trigger_value, wait_time=self.trigger_wait_time, value_tolerance=100) # TODO: determine channel and value
+        #input("Press enter to simulate takeoff confirmation...") # TODO: remove this line and uncomment the line above
         response = 0
         # if response is not 0, takeoff confirmation failed (timeout)
         if response:
