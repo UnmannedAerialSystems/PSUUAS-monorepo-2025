@@ -231,9 +231,9 @@ def generate_training_data(num_samples):
     print(f'\nGenerated {num_samples} training samples.')
 
 
-TARGETS_DIRECTORY = '../targets_2'
-BACKGROUND_DIRECTORY = '../backgrounds_upscaled'
-OUTPUT_DIRECTORY = './training_data'
+TARGETS_DIRECTORY = './targets_2'
+BACKGROUND_DIRECTORY = './backgrounds_upscaled'
+OUTPUT_DIRECTORY = './validation_data'
 TRUE_DIRECTORY = 'object_present'
 FALSE_DIRECTORY = 'no_object'
 

@@ -4,3 +4,5 @@ tdqm
 scikit-learn
 torch
 torchvision
+matplotlib
+pillow

@@ -63,9 +63,9 @@ MAX_DETECT_ATTEMPTS = 2
 
 class Operation:
 
-    def __init__(self):
+    def __init__(self, connection_string='/dev/ttyACM0'):
         # Initialize components
-        self.flight = Flight()
+        self.flight = Flight(connection_string=connection_string)
         #self.camera = UAS_Camera.Camera()
         #self.mapper = targetMapper.TargetMapper()
         #self.detection = lion_sight.LionSight()

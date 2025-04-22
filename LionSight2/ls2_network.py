@@ -33,7 +33,7 @@ class LS2Network:
 
         # Define the model architecture (e.g., MobileNetV2, ResNet18, etc.)
         from torchvision import models
-        self.net = models.mobilenet_v2(pretrained=False)  # Replace with your model architecture
+        self.net = models.mobilenet_v2(pretrained=True)  # Replace with your model architecture
         self.net.classifier = torch.nn.Sequential(
             torch.nn.Linear(self.net.last_channel, 512),
             torch.nn.ReLU(),
@@ -88,6 +88,7 @@ class LS2Network:
         img_tensor = transform(self.img)
         
         img_tensor = img_tensor.unsqueeze(0)  # Add batch dimension
+        img_tensor = img_tensor.to(self.device)
 
         # Run the network
         with torch.no_grad():

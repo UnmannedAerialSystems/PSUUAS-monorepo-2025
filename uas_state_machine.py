@@ -12,6 +12,7 @@ From MAVLink directory: ./ardupilot/Tools/autotest/sim_vehicle.py -v ArduPlane -
 
 import uas_state_actions
 from logging_config import configure_logging
+import argparse
 
 # Configure logging
 logger = configure_logging()
@@ -67,8 +68,18 @@ def translate_mission_state(state):
 
 def main():
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--connection",
+        type=str,
+        default="/dev/ttyACM0",
+        help="Connection string for the UAS. For Pi to Cube, use '/dev/ttyACM0'. For SITL, use 'tcp:127.0.0.1:5762. On Windows, check Device Manager under 'Ports (COM & LPT)'. On MacOS, run 'ls /dev/tty.*' to find the correct port. On Linux, run 'ls /dev/ttyUSB* /dev/ttyACM*' to find the correct port.",
+    )
+    
+    args = parser.parse_args()
+
     # Initialize operation
-    operation = uas_state_actions.Operation()
+    operation = uas_state_actions.Operation(connection_string=args.connection)
 
     # Load mission plan
     operation.load_plan('./testing/mission_plan_sample.txt')
