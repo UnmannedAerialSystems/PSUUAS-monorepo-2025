@@ -13,3 +13,6 @@
 [submodule "MAVez"]
     path = MAVez
     url = git@github.com:tedtasman/MAVez.git
+[submodule "LionSight2"]
+	path = LionSight2
+	url = git@github.com:tedtasman/LionSight2.git
