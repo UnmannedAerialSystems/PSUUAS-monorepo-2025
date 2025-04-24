@@ -408,12 +408,12 @@ class Operation:
         
         self.logger.info("Landing successful.")
 
-        # jump ahead to complete mission   
-        self.logger.info("Jumping to next mission item...")
-        self.flight.jump_to_next_mission_item()
+        # jump ahead to complete mission TODO: re-enable this for re-takeoff
+        #self.logger.info("Jumping to next mission item...")
+        #self.flight.jump_to_next_mission_item()
 
         self.flight_state = IDLE
-        self.next_mission_state = PREFLIGHT
+        self.next_mission_state = COMPLETE # TODO: set to preflight for re-takeoff
         
 
 

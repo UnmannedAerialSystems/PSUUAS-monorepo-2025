@@ -12,3 +12,4 @@ way.txt
 .DS_Store
 /__pycache__
 /flight_logs
+/.vscode
