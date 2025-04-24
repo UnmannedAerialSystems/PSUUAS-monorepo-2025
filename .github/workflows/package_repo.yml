@@ -44,13 +44,13 @@ jobs:
       run: |
         find . -name "start_uas.sh" -type f -exec rm -f {} +
     
-    - name: Create tar.gz safely outside workspace
+    - name: Create tar.gz safely in temp dir
       run: |
-        mkdir -p dist  # Make sure dist/ exists
-        mkdir -p dist-temp  # Temporary directory for the tarball
-        tar -czf dist-temp/uas-package.tar.gz .
+        mkdir -p dist-temp
+        tar -czf dist-temp/uas-package.tar.gz --exclude='./dist' .
+        mkdir -p dist
         mv dist-temp/uas-package.tar.gz dist/
-        echo "✅ Tarball created:"
+        echo "✅ Tarball ready:"
         ls -la dist/
     
     - name: Upload tarball artifact
