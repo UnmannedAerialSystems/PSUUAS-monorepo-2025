@@ -8,7 +8,7 @@ def configure_logging():
     os.makedirs("./flight_logs", exist_ok=True)
 
     # Create a log file with a timestamp
-    log_filename = f"./flight_logs/uas_flight_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+    log_filename = f"./flight_logs/log_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
 
     # Get the logger
     logger = logging.getLogger()

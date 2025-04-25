@@ -7,7 +7,7 @@ PSU UAS
 
 This script implements a state machine for an Unmanned Aerial System (UAS) operation.
 
-From MAVLink directory: ./ardupilot/Tools/autotest/sim_vehicle.py -v ArduPlane --console --map --custom-location 40.836055,-77.693492,0,343
+From MAVLink directory: ./ardupilot/Tools/autotest/sim_vehicle.py -v ArduPlane --console --map --custom-location 40.841042,-77.698899,0,200
 '''
 
 import uas_state_actions
@@ -96,7 +96,7 @@ def main():
 
     while operation.next_mission_state != COMPLETE:
 
-        logger.info(f"Current mission state: {translate_mission_state(operation.next_mission_state)}")
+        logger.info(f"[States] Current mission state: {translate_mission_state(operation.next_mission_state)}")
 
         # get action corresponding to the next mission state
         action = actions.get(operation.next_mission_state) 
@@ -107,7 +107,7 @@ def main():
             # Check for abort
             if operation.status == ABORT:
 
-                logger.critical("Operation aborted.")
+                logger.critical("[States] Operation aborted.")
                 # just end the mission if we are idle or landing
                 if operation.flight_state == IDLE or operation.next_mission_state == LANDING:
                     operation.next_mission_state = COMPLETE
@@ -125,7 +125,7 @@ def main():
             operation.next_mission_state = LANDING  # Fallback to landing state
             operation.status = ABORT
     
-    logger.info("Operation ended.")
+    logger.info("[States] Operation ended.")
 
 
 if __name__ == "__main__":
