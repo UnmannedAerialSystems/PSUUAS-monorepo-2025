@@ -12,7 +12,7 @@ from MAVez.Coordinate import Coordinate
 from MAVez.Mission import Mission
 from MAVez.flight_manger import Flight
 from logging_config import configure_logging
-from LionSight2.lion_sight_2 import LionSight2 as LS2
+from LionSight2 import lion_sight_2
 from UASCamera2 import UAS_camera
 import time
 import cv2
@@ -73,7 +73,7 @@ class Operation:
         self.flight.set_logger(self.logger)
 
         self.camera = UAS_camera.get_camera(self.flight, self.flight.logger)  # Get real camera or emulator
-        #self.detection = LS2()
+        self.detection = lion_sight_2.get_ls2(logger=self.flight.logger)  # Get real detection or emulator
         
         # Initialize mission parameters
         self.mission_plan = None
@@ -130,7 +130,6 @@ class Operation:
         lat, lon, alt = self.mission_plan['home'].split(',')
         self.mission_plan['home'] = Coordinate(float(lat), float(lon), float(alt))
 
-        
         self.takeoff_mission = self.mission_plan['takeoff']
         self.landing_mission = self.mission_plan['land']
         self.geofence_mission = self.mission_plan['geofence']
@@ -145,6 +144,15 @@ class Operation:
         self.trigger_channel = int(self.mission_plan['trigger_channel'])
         self.trigger_value = int(self.mission_plan['trigger_value'])
         self.trigger_wait_time = int(self.mission_plan['trigger_wait_time'])
+
+        # set detection plan
+        detection_entry = self.mission_plan['detection_entry'].split(',')
+        detection_exit = self.mission_plan['detection_exit'].split(',')
+        self.detection.set_plan(
+            entry_coord=Coordinate(float(detection_entry[0]), float(detection_entry[1]), float(detection_entry[2])),
+            exit_coord=Coordinate(float(detection_exit[0]), float(detection_exit[1]), float(detection_exit[2])),
+            width=float(self.mission_plan['detection_width']),
+        )
 
         self.next_mission_state = PREFLIGHT
 
