@@ -1,0 +1,14 @@
+takeoff:            ./tri-park-3/takeoff.txt
+land:               ./tri-park-3/land.txt
+detect:             ./tri-park-3/detect.txt
+airdrop:            ./tri-park-3/airdrop.txt
+geofence:           ./tri-park-3/fence.txt
+home:               0,0,0
+detect_index:       3
+airdrop_index:      3
+trigger_channel:     6
+trigger_value:       2006
+trigger_wait_time:   10000
+airdrop_servo:       10
+airdrop_value_open:  800
+airdrop_value_close: 2100
