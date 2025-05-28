@@ -82,7 +82,7 @@ def main():
     operation = uas_state_actions.Operation(connection_string=args.connection)
 
     # Load mission plan
-    operation.load_plan('./tri-park-2/mp_tri-park.txt')
+    operation.load_plan('./tri-park-3/mp_tri.txt')
 
     # Define actions
     actions = {

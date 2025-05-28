@@ -11,13 +11,11 @@ This module implements the actions for the UAS state machine.
 from MAVez.Coordinate import Coordinate
 from MAVez.Mission import Mission
 from MAVez.flight_manger import Flight
-#from CameraModule import camera_emulator as UAS_Camera
-#from GPSLocator import targetMapper
-from ObjectDetection import lion_sight_emulator as lion_sight
 from logging_config import configure_logging
+from LionSight2.lion_sight_2 import LionSight2 as LS2
+from UASCamera2 import UAS_camera
 import time
-
-
+import cv2
 
 
 # MISSION STATES
@@ -66,11 +64,16 @@ MAX_DETECT_ATTEMPTS = 2
 class Operation:
 
     def __init__(self, connection_string='/dev/ttyACM0'):
+
+        # Configure logging
+        self.logger = configure_logging()
+
         # Initialize components
         self.flight = Flight(connection_string=connection_string)
-        #self.camera = UAS_Camera.Camera()
-        #self.mapper = targetMapper.TargetMapper()
-        #self.detection = lion_sight.LionSight()
+        self.flight.set_logger(self.logger)
+
+        self.camera = UAS_camera.get_camera(self.flight, self.flight.logger)  # Get real camera or emulator
+        #self.detection = LS2()
         
         # Initialize mission parameters
         self.mission_plan = None
@@ -104,9 +107,7 @@ class Operation:
         self.targets = []
         self.current_target = 0
 
-        # Configure logging
-        self.logger = configure_logging()
-        self.flight.set_logger(self.logger)
+
 
 
 
@@ -292,8 +293,8 @@ class Operation:
         self.logger.info("[Actions] Starting detection...")
 
         # take photos
-        #self.camera.start()
-        time.sleep(3)
+        self.camera.capture_images(20, 0)
+        #time.sleep(3)
 
         # returns detection results if successful
         #targets = self.detection.detect()
@@ -337,6 +338,9 @@ class Operation:
         # wait and send airdrop mission
         self.logger.info("[Actions] Waiting to send airdrop mission...")
         self.flight.wait_and_send_next_mission()
+
+        for image in self.camera.images:
+            cv2.imshow(image.image, str(image.coordinate))
 
         # targets must exist to perform airdrop
         if not self.targets:
@@ -465,7 +469,7 @@ class Operation:
 
 def main():
 
-    op = Operation()
+    op = Operation(connection_string='tcp:127.0.0.1:5762')
     op.load_plan('./testing/mission_plan_sample.txt')
 
 if __name__ == "__main__":
