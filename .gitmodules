@@ -16,3 +16,6 @@
 [submodule "drop-script-2025"]
 	path = drop-script-2025
 	url = git@github.com:UnmannedAerialSystems/drop-script-2025.git
+[submodule "UASCamera2"]
+	path = UASCamera2
+	url = git@github.com:UnmannedAerialSystems/UASCamera2.git

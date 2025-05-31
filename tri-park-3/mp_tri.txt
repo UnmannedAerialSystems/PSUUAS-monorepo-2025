@@ -5,10 +5,12 @@ airdrop:            ./tri-park-3/airdrop.txt
 geofence:           ./tri-park-3/fence.txt
 home:               0,0,0
 detect_index:       3
-airdrop_index:      3
+airdrop_index:      4
 trigger_channel:     6
 trigger_value:       2006
 trigger_wait_time:   10000
-airdrop_servo:       10
-airdrop_value_open:  800
-airdrop_value_close: 2100
+detection_entry:     40.84181406869122,-77.6975985677159,0
+detection_exit:      40.8410979035657,-77.69898679735358,0
+detection_width:     30
+airdrop_heading:     234
+airdrop_buffer:      50
