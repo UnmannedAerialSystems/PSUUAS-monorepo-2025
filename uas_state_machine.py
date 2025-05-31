@@ -7,7 +7,8 @@ PSU UAS
 
 This script implements a state machine for an Unmanned Aerial System (UAS) operation.
 
-From MAVLink directory: ./ardupilot/Tools/autotest/sim_vehicle.py -v ArduPlane --console --map --custom-location 40.841042,-77.698899,0,200
+From MAVLink directory: 
+./ardupilot/Tools/autotest/sim_vehicle.py -v ArduPlane --console --map --custom-location 40.841042,-77.698899,0,200
 '''
 
 import uas_state_actions

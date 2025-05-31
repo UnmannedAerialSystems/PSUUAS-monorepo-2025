@@ -77,20 +77,24 @@ class Operation:
         
         # Initialize mission parameters
         self.mission_plan = None
+
         self.detect_index = None
         self.airdrop_index = None
+
         self.home_coordinates = None
         self.takeoff_mission = None
         self.landing_mission = None
         self.geofence_mission = None
         self.detection_mission = None
         self.airdrop_mission = None
-        self.airdrop_servo = None
-        self.airdrop_value_open = None
-        self.airdrop_value_close = None
+
         self.trigger_channel = None
         self.trigger_value = None
         self.trigger_wait_time = None
+
+        self.airdrop_heading = None
+        self.airdrop_buffer = None
+        self.drop_count = 0
 
         # Initialize states
         self.next_mission_state = None
@@ -136,14 +140,16 @@ class Operation:
         self.detection_mission = self.mission_plan['detect']
         self.airdrop_mission = self.mission_plan['airdrop']
         self.home_coordinates = self.mission_plan['home']
+
         self.detect_index = int(self.mission_plan['detect_index'])
         self.airdrop_index = int(self.mission_plan['airdrop_index'])
-        self.airdrop_servo = int(self.mission_plan['airdrop_servo'])
-        self.airdrop_value_open = int(self.mission_plan['airdrop_value_open'])
-        self.airdrop_value_close = int(self.mission_plan['airdrop_value_close'])
+
         self.trigger_channel = int(self.mission_plan['trigger_channel'])
         self.trigger_value = int(self.mission_plan['trigger_value'])
         self.trigger_wait_time = int(self.mission_plan['trigger_wait_time'])
+
+        self.airdrop_heading = float(self.mission_plan['airdrop_heading'])
+        self.airdrop_buffer = float(self.mission_plan['airdrop_buffer'])
 
         # set detection plan
         detection_entry = self.mission_plan['detection_entry'].split(',')
@@ -172,7 +178,7 @@ class Operation:
 
         elif self.next_mission_state == AIRDROP:
             # append airdrop mission
-            self.flight.append_mission(self.airdrop_mission)
+            self.flight.append_airdrop_mission()
             self.logger.info("[Actions] Airdrop mission appended.")
         
         elif self.next_mission_state == LANDING:
@@ -302,17 +308,27 @@ class Operation:
 
         # take photos
         self.camera.capture_images(20, 0)
-        #time.sleep(3)
-
-        # returns detection results if successful
-        #targets = self.detection.detect()
-        targets = [1, 2, 3, 4] # TODO: replace with actual detection results
+        
+        # perform detection
+        self.detection.images = self.camera.images
+        targets = self.detection.detect()
 
         # check for detection results
         if targets: # for successful detection
 
             self.logger.info(f"[Actions] Detected target: {targets}")
             self.targets = targets
+
+            self.flight.build_airdrop_mission(
+                target_coordinate=self.targets[0],  # use first target for airdrop mission
+                airdrop_mission_file= self.airdrop_mission,  # use airdrop mission file from mission plan
+                target_index=self.airdrop_index,  # use airdrop index from mission plan
+                altitude=15,  # set altitude for airdrop pass
+                drop_count=0,  # set drop count to 0 for first airdrop
+                buffer_distance=100,  # set buffer distance for airdrop pass
+                heading=self.airdrop_heading,  # set heading for airdrop pass
+            )
+
             self.detection_state = DETECT_COMPLETE
             self.next_mission_state = AIRDROP
 
@@ -337,7 +353,7 @@ class Operation:
                 self.detection_state = DETECT_INCOMPLETE # fall back to incomplete for proper retry
                 self.next_mission_state = DETECT
                 return
-    
+        
 
     def airdrop(self):
         '''
@@ -347,58 +363,76 @@ class Operation:
         self.logger.info("[Actions] Waiting to send airdrop mission...")
         self.flight.wait_and_send_next_mission()
 
-        for image in self.camera.images:
-            cv2.imshow(image.image, str(image.coordinate))
-
-        # targets must exist to perform airdrop
-        if not self.targets:
-            self.logger.error("[Actions] No targets detected. Cannot perform airdrop.")
+        # # targets must exist to perform airdrop
+        # if not self.targets:
+        #     self.logger.error("[Actions] No targets detected. Cannot perform airdrop.")
             
-            # we can run detection if we have not reached max attempts
-            if self.detect_attempts < self.max_detect_attempts:
-                self.logger.info("[Actions] Attempting to detect again...")
-                self.next_mission_state = DETECT
-                return
-            else:
-                self.logger.critical("[Actions] Max detection attempts reached. Aborting...")
-                self.status = ABORT
-                self.mission_state = LANDING
-                return
+        #     # we can run detection if we have not reached max attempts
+        #     if self.detect_attempts < self.max_detect_attempts:
+        #         self.logger.info("[Actions] Attempting to detect again...")
+        #         self.next_mission_state = DETECT
+        #         return
+        #     else:
+        #         self.logger.critical("[Actions] Max detection attempts reached. Aborting...")
+        #         self.status = ABORT
+        #         self.mission_state = LANDING
+        #         return
         
-        # wait to reach airdrop zone
-        self.logger.info("[Actions] Waiting to reach airdrop zone...")
+        # # wait to reach airdrop zone
+        # self.logger.info("[Actions] Waiting to reach airdrop zone...")
 
-        # wait_for_waypoint_reached blocks until the specified waypoint is reached or timeout
-        response = self.flight.wait_for_waypoint_reached(self.airdrop_index, 100)
+        # # wait_for_waypoint_reached blocks until the specified waypoint is reached or timeout
+        # response = self.flight.wait_for_waypoint_reached(self.airdrop_index, 100)
 
-        # check for response; if response is not 0, airdrop zone not reached
-        if response:
-            self.logger.critical(f"[Actions] Airdrop zone not reached: {self.flight.decode_error(response)}")
-            self.status = ABORT
-            self.mission_state = LANDING
-            return
+        # # check for response; if response is not 0, airdrop zone not reached
+        # if response:
+        #     self.logger.critical(f"[Actions] Airdrop zone not reached: {self.flight.decode_error(response)}")
+        #     self.status = ABORT
+        #     self.mission_state = LANDING
+        #     return
         
-        else:
+        # else:
         
-            # perform airdrop
-            self.logger.info("[Actions] Triggering airdrop servo...")
-            self.flight.set_servo(self.airdrop_servo, self.airdrop_value_open) 
-            time.sleep(2)
-            self.flight.set_servo(self.airdrop_servo, self.airdrop_value_close)
-            self.logger.info("[Actions] Airdrop successful.")
+        #     # perform airdrop
+        #     self.logger.info("[Actions] Triggering airdrop servo...")
+        #     self.flight.set_servo(self.airdrop_servo, self.airdrop_value_open) 
+        #     time.sleep(2)
+        #     self.flight.set_servo(self.airdrop_servo, self.airdrop_value_close)
+        #     self.logger.info("[Actions] Airdrop successful.")
             
-            self.current_target += 1
-            self.payload_state = PAYLOAD_RELEASED
+        #     self.current_target += 1
+        #     self.payload_state = PAYLOAD_RELEASED
 
-            # check if all targets have been airdropped
-            if self.current_target >= len(self.targets):
-                # if so, mission is complete
-                self.logger.info("[Actions] All targets airdropped. Mission complete.")
-                self.completion_state = AIRDROPS_COMPLETE 
+        #     # check if all targets have been airdropped
+        #     if self.current_target >= len(self.targets):
+        #         # if so, mission is complete
+        #         self.logger.info("[Actions] All targets airdropped. Mission complete.")
+        #         self.completion_state = AIRDROPS_COMPLETE 
             
-            # land no matter what after airdrop
+        #     # land no matter what after airdrop
+        #     self.next_mission_state = LANDING
+
+        # TODO: receive airdrop confirmation from drop script
+
+        self.logger.info("[Actions] Airdrop successful.")
+
+        self.drop_count += 1
+        if self.drop_count % 2 == 0: # all even drops need landing
+            self.logger.info("[Actions] All payloads away. Landing now.")
             self.next_mission_state = LANDING
-    
+        else: # odd drops can continue to next mission
+            self.logger.info("[Actions] Payload away. Continuing to next airdrop.")
+            self.flight.build_airdrop_mission(
+                target_coordinate=self.targets[self.drop_count],  # use first target for airdrop mission
+                airdrop_mission_file= self.airdrop_mission,  # use airdrop mission file from mission plan
+                target_index=self.airdrop_index,  # use airdrop index from mission plan
+                altitude=15,  # set altitude for airdrop pass
+                drop_count=self.drop_count,  # increment drop count for next airdrop
+                buffer_distance=100,  # set buffer distance for airdrop pass
+                heading=self.airdrop_heading,  # set heading for airdrop pass
+            )
+            self.next_mission_state = AIRDROP # continue to airdrop next target
+
 
     def land(self):
         """
