@@ -9,6 +9,7 @@ This script implements a state machine for an Unmanned Aerial System (UAS) opera
 
 From MAVLink directory: 
 ./ardupilot/Tools/autotest/sim_vehicle.py -v ArduPlane --console --map --custom-location 40.841042,-77.698899,0,200
+./ardupilot/Tools/autotest/sim_vehicle.py -v ArduPlane --console --map --custom-location 38.315324,-76.549762,0,282
 '''
 
 import uas_state_actions
@@ -76,14 +77,20 @@ def main():
         default="/dev/ttyACM0",
         help="Connection string for the UAS. For Pi to Cube, use '/dev/ttyACM0'. For SITL, use 'tcp:127.0.0.1:5762. On Windows, check Device Manager under 'Ports (COM & LPT)'. On MacOS, run 'ls /dev/tty.*' to find the correct port. On Linux, run 'ls /dev/ttyUSB* /dev/ttyACM*' to find the correct port.",
     )
-    
+    parser.add_argument(
+        "--plan",
+        type=str,
+        default="./comp-left->west/plan.txt",
+        help="Path to the mission plan file. Default is './comp-left->west/plan.txt'. Naming convention: 'comp-left->west' indicates the runway to the left from the village, taking off towards the west. Other options: 'comp-left->east', 'comp-right->west', 'comp-right->east'.",
+    )
+
     args = parser.parse_args()
 
     # Initialize operation
     operation = uas_state_actions.Operation(connection_string=args.connection)
 
     # Load mission plan
-    operation.load_plan('./tri-park-3/mp_tri.txt')
+    operation.load_plan(args.plan)
 
     # Define actions
     actions = {

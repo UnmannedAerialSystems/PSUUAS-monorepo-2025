@@ -1,0 +1,15 @@
+takeoff:            ./comp-left->west/takeoff.txt
+land:               ./comp-left->west/land.txt
+detect:             ./comp-left->west/detect.txt
+airdrop:            ./comp-left->west/airdrop.txt
+geofence:           ./comp-left->west/geofence.txt
+home:               0,0,0
+detect_index:       1
+airdrop_index:      2
+trigger_channel:     8
+trigger_value:       2006
+trigger_wait_time:   10000
+detection_entry:     38.31538175858164,-76.55093537268273,0
+detection_exit:      38.31567923856452,-76.55276331292735,0
+detection_width:     30
+airdrop_altitude:    20

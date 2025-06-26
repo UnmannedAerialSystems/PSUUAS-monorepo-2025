@@ -1,0 +1,15 @@
+takeoff:            ./backyard/takeoff.txt
+land:               ./backyard/landing.txt
+detect:             ./backyard/detect.txt
+airdrop:            ./backyard/airdrop.txt
+geofence:           ./backyard/geofence.txt
+home:               0,0,0
+detect_index:       1
+airdrop_index:      1
+trigger_channel:     8
+trigger_value:       2006
+trigger_wait_time:   10000
+detection_entry:     38.298309, -76.639200,0
+detection_exit:      38.298376,	-76.639191,0
+detection_width:     30
+airdrop_altitude:    1
